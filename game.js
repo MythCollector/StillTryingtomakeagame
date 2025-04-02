@@ -7,7 +7,7 @@ canvas.height = 600;
 const gravity = 0.5;
 const groundLevel = 550;
 
-let blockAmount = 5; // Change this to add more blocks
+let blockAmount = 5; // Number of blocks
 let characters = [];
 
 for (let i = 0; i < blockAmount; i++) {
@@ -18,6 +18,7 @@ for (let i = 0; i < blockAmount; i++) {
     height: 40,
     color: getRandomColor(),
     velocityY: 0,
+    velocityX: 0,
     isOnGround: false
   });
 }
@@ -38,29 +39,44 @@ function getRandomColor() {
   return colors[Math.floor(Math.random() * colors.length)];
 }
 
+// Function to check collisions
 function checkCollision(character, dx, dy) {
   for (let i = 0; i < characters.length; i++) {
     if (characters[i] !== character) {
       const other = characters[i];
-
       if (
         character.x + dx < other.x + other.width &&
         character.x + dx + character.width > other.x &&
         character.y + dy < other.y + other.height &&
         character.y + dy + character.height > other.y
       ) {
-        return true; // Collision detected
+        return other;
       }
     }
   }
-  return false;
+  return null;
+}
+
+// Function to count weight (how many blocks are stacked on this one)
+function getStackWeight(character) {
+  let weight = 1;
+  for (let i = 0; i < characters.length; i++) {
+    let other = characters[i];
+    if (other !== character && 
+        other.x < character.x + character.width && 
+        other.x + other.width > character.x && 
+        other.y + other.height <= character.y) {
+      weight += getStackWeight(other);
+    }
+  }
+  return weight;
 }
 
 function update() {
   characters.forEach((character, index) => {
     let grounded = false;
 
-    // Apply gravity if not on top of another block
+    // Gravity applies if there's no block below
     if (!checkCollision(character, 0, character.velocityY + 1)) {
       character.velocityY += gravity;
     } else {
@@ -69,7 +85,7 @@ function update() {
     }
     character.y += character.velocityY;
 
-    // Prevent falling through ground
+    // Stop at ground level
     if (character.y + character.height > groundLevel) {
       character.y = groundLevel - character.height;
       character.velocityY = 0;
@@ -78,18 +94,35 @@ function update() {
 
     character.isOnGround = grounded;
 
-    // Allow only the selected character to move left/right & jump
+    // Handle horizontal movement
     if (index === selectedIndex) {
-      if (keys["ArrowUp"] && character.isOnGround) {
-        character.velocityY = -10;
-      }
-      if (keys["ArrowLeft"] && !checkCollision(character, -2, 0)) {
-        character.x -= 2;
-      }
-      if (keys["ArrowRight"] && !checkCollision(character, 2, 0)) {
-        character.x += 2;
+      let moveX = 0;
+      if (keys["ArrowLeft"]) moveX = -2;
+      if (keys["ArrowRight"]) moveX = 2;
+
+      if (moveX !== 0) {
+        let collision = checkCollision(character, moveX, 0);
+        if (!collision) {
+          character.velocityX = moveX;
+        } else {
+          // Get the weight of the stacked blocks
+          let totalWeight = getStackWeight(collision);
+          let pushForce = 3 / totalWeight; // More weight = harder to push
+          
+          if (Math.abs(moveX) > pushForce) {
+            collision.velocityX = pushForce * Math.sign(moveX);
+            character.velocityX = pushForce * Math.sign(moveX);
+          } else {
+            character.velocityX = 0;
+          }
+        }
       }
     }
+
+    // Apply sliding effect
+    character.x += character.velocityX;
+    character.velocityX *= 0.95; // Makes the movement smooth like ice
+    if (Math.abs(character.velocityX) < 0.01) character.velocityX = 0; // Stop completely when slow enough
   });
 }
 
@@ -119,3 +152,4 @@ function gameLoop() {
 }
 
 gameLoop();
+
