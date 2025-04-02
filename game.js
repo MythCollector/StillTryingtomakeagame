@@ -94,18 +94,22 @@ function update() {
 
     character.isOnGround = grounded;
 
-    // Handle horizontal movement
+    // Handle horizontal movement & jumping for selected block
     if (index === selectedIndex) {
       let moveX = 0;
       if (keys["ArrowLeft"]) moveX = -2;
       if (keys["ArrowRight"]) moveX = 2;
+      
+      if (keys["ArrowUp"] && character.isOnGround) {
+        character.velocityY = -10; // Jumping works again!
+      }
 
       if (moveX !== 0) {
         let collision = checkCollision(character, moveX, 0);
         if (!collision) {
           character.velocityX = moveX;
         } else {
-          // Get the weight of the stacked blocks
+          // Pushing logic
           let totalWeight = getStackWeight(collision);
           let pushForce = 3 / totalWeight; // More weight = harder to push
           
@@ -119,10 +123,13 @@ function update() {
       }
     }
 
-    // Apply sliding effect
-    character.x += character.velocityX;
-    character.velocityX *= 0.95; // Makes the movement smooth like ice
-    if (Math.abs(character.velocityX) < 0.01) character.velocityX = 0; // Stop completely when slow enough
+    // Apply sliding effect (only when moving)
+    if (Math.abs(character.velocityX) > 0.01) {
+      character.x += character.velocityX;
+      character.velocityX *= 0.95; // Makes the movement smooth like ice
+    } else {
+      character.velocityX = 0; // Stop completely when slow enough
+    }
   });
 }
 
