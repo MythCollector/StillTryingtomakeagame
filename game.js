@@ -8,9 +8,9 @@ const gravity = 0.5; // Strength of gravity
 const groundLevel = 550; // Where the ground is
 
 let characters = [
-  { x: 100, y: 100, color: "red", velocityY: 0 },
-  { x: 200, y: 100, color: "blue", velocityY: 0 },
-  { x: 300, y: 100, color: "green", velocityY: 0 }
+  { x: 100, y: 100, width: 40, height: 40, color: "red", velocityY: 0 },
+  { x: 200, y: 100, width: 40, height: 40, color: "blue", velocityY: 0 },
+  { x: 300, y: 100, width: 40, height: 40, color: "green", velocityY: 0 }
 ];
 
 let selectedIndex = 0;
@@ -25,24 +25,42 @@ document.addEventListener("keypress", (e) => {
 });
 
 function update() {
-  let character = characters[selectedIndex];
+  characters.forEach((character, index) => {
+    // Apply gravity to ALL characters
+    character.velocityY += gravity;
+    character.y += character.velocityY;
 
-  // Apply gravity
-  character.velocityY += gravity;
-  character.y += character.velocityY;
+    // Collision detection with ground and stacking
+    if (character.y + character.height > groundLevel) {
+      character.y = groundLevel - character.height; // Prevent falling below ground
+      character.velocityY = 0; // Stop vertical movement
 
-  // Prevent falling below ground
-  if (character.y > groundLevel) {
-    character.y = groundLevel;
-    character.velocityY = 0; // Stop falling when on ground
-  }
+      // Stack characters on top of each other if they overlap
+      for (let i = 0; i < characters.length; i++) {
+        if (i !== index) {
+          const other = characters[i];
+          // Check for overlap
+          if (character.x < other.x + other.width &&
+            character.x + character.width > other.x &&
+            character.y + character.height > other.y &&
+            character.y < other.y + other.height) {
+            // Stack character on top of the other
+            character.y = other.y - character.height;
+            character.velocityY = 0;
+          }
+        }
+      }
+    }
 
-  // Movement
-  if (keys["ArrowUp"] && character.y === groundLevel) {
-    character.velocityY = -10; // Jump
-  }
-  if (keys["ArrowLeft"]) character.x -= 2;
-  if (keys["ArrowRight"]) character.x += 2;
+    // Allow only the selected character to move left/right & jump
+    if (index === selectedIndex) {
+      if (keys["ArrowUp"] && character.y === groundLevel) {
+        character.velocityY = -10; // Jump
+      }
+      if (keys["ArrowLeft"]) character.x -= 2;
+      if (keys["ArrowRight"]) character.x += 2;
+    }
+  });
 }
 
 function draw() {
@@ -54,9 +72,7 @@ function draw() {
 
   characters.forEach((char, index) => {
     ctx.fillStyle = char.color;
-    ctx.beginPath();
-    ctx.arc(char.x, char.y, 20, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fillRect(char.x, char.y, char.width, char.height); // Draw as square (rectangle)
 
     if (index === selectedIndex) {
       ctx.strokeStyle = "yellow";
