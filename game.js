@@ -7,16 +7,16 @@ canvas.height = 600;
 const gravity = 0.5; // Strength of gravity
 const groundLevel = 550; // Where the ground is
 
-let blockAmount = 5; // Control how many blocks/characters you want
+let blockAmount = 5; // Control how many blocks you want
 let characters = [];
 
 for (let i = 0; i < blockAmount; i++) {
   characters.push({
-    x: 100 + i * 60,  // Horizontal position with spacing between blocks
+    x: 100 + i * 60,  // Start with some spacing
     y: 100,
     width: 40,
     height: 40,
-    color: getRandomColor(), // Random color for fun
+    color: getRandomColor(),
     velocityY: 0,
     isOnGround: false
   });
@@ -40,37 +40,43 @@ function getRandomColor() {
 
 function update() {
   characters.forEach((character, index) => {
-    // Apply gravity to ALL characters
-    character.velocityY += gravity;
-    character.y += character.velocityY;
+    // Apply gravity if there's no solid block below
+    let grounded = false;
 
-    // Collision detection with ground and stacking
-    if (character.y + character.height > groundLevel) {
-      character.y = groundLevel - character.height; // Prevent falling below ground
-      character.velocityY = 0; // Stop vertical movement
-      character.isOnGround = true; // Mark as on ground
-    } else {
-      character.isOnGround = false; // Not on the ground if it's falling
-    }
-
-    // Stack characters on top of each other if they overlap (only vertical stacking)
+    // Check for stacking on other blocks
     for (let i = 0; i < characters.length; i++) {
       if (i !== index) {
         const other = characters[i];
-        // Check for vertical overlap and stack if needed
-        if (character.x < other.x + other.width &&
-            character.x + character.width > other.x &&
-            character.y + character.height > other.y &&
-            character.y < other.y + other.height) {
-          // Stack character on top of the other character
-          if (character.y + character.height <= other.y) {
-            character.y = other.y - character.height; // Stack on top
-            character.velocityY = 0;
-            character.isOnGround = true;
-          }
+
+        // Check if the character is right above another one
+        if (
+          character.x < other.x + other.width &&
+          character.x + character.width > other.x &&
+          character.y + character.height <= other.y &&
+          character.y + character.height + character.velocityY >= other.y
+        ) {
+          character.y = other.y - character.height;
+          character.velocityY = 0;
+          grounded = true;
+          break;
         }
       }
     }
+
+    // If not stacked, apply gravity
+    if (!grounded) {
+      character.velocityY += gravity;
+      character.y += character.velocityY;
+    }
+
+    // Check collision with the ground
+    if (character.y + character.height > groundLevel) {
+      character.y = groundLevel - character.height;
+      character.velocityY = 0;
+      grounded = true;
+    }
+
+    character.isOnGround = grounded;
 
     // Allow only the selected character to move left/right & jump
     if (index === selectedIndex) {
@@ -92,12 +98,12 @@ function draw() {
 
   characters.forEach((char, index) => {
     ctx.fillStyle = char.color;
-    ctx.fillRect(char.x, char.y, char.width, char.height); // Draw as square (rectangle)
+    ctx.fillRect(char.x, char.y, char.width, char.height); // Draw square
 
     if (index === selectedIndex) {
       ctx.strokeStyle = "yellow";
       ctx.lineWidth = 3;
-      ctx.stroke();
+      ctx.strokeRect(char.x, char.y, char.width, char.height);
     }
   });
 }
