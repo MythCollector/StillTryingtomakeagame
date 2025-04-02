@@ -37,11 +37,11 @@ function update() {
     if (keys.right) character.x += 5;
 }
 
-// Draw player character
+// Draw player character as a rectangle
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
     ctx.fillStyle = character.color;
-    ctx.fillRect(character.x, character.y, character.width, character.height); // Draw the character
+    ctx.fillRect(character.x, character.y, character.width, character.height); // Draw the character (as a colored rectangle)
 }
 
 // Game loop
