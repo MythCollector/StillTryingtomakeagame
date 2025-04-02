@@ -116,7 +116,7 @@ function update() {
       if (moveX !== 0) {
         let collision = checkCollision(character, moveX, 0);
         if (!collision) {
-          character.velocityX = moveX;
+          character.x += moveX;
         } else {
           // Push entire stack
           let stack = getStack(collision);
@@ -125,22 +125,12 @@ function update() {
 
           if (Math.abs(moveX) > pushForce) {
             stack.forEach(block => {
-              block.velocityX = pushForce * Math.sign(moveX);
+              block.x += pushForce * Math.sign(moveX);
             });
-            character.velocityX = pushForce * Math.sign(moveX);
-          } else {
-            character.velocityX = 0;
+            character.x += pushForce * Math.sign(moveX);
           }
         }
       }
-    }
-
-    // Apply sliding effect (only when moving)
-    if (Math.abs(character.velocityX) > 0.01) {
-      character.x += character.velocityX;
-      character.velocityX *= 0.95; // Makes the movement smooth like ice
-    } else {
-      character.velocityX = 0; // Stop completely when slow enough
     }
   });
 }
