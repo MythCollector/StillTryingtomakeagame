@@ -23,6 +23,8 @@ girlBtn.addEventListener('click', () => {
 function startGame() {
     document.querySelector('.container').style.display = 'none';
     canvas.style.display = 'block';
+    canvas.width = 800;  // Ensuring canvas has the correct width
+    canvas.height = 600; // Ensuring canvas has the correct height
     gameLoop();
 }
 
@@ -65,4 +67,3 @@ window.addEventListener('keyup', (e) => {
     if (e.key === 'ArrowLeft') keys.left = false;
     if (e.key === 'ArrowRight') keys.right = false;
 });
-
