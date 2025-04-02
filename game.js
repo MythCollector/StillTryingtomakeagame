@@ -57,26 +57,35 @@ function checkCollision(character, dx, dy) {
   return null;
 }
 
-// Function to count weight (how many blocks are stacked on this one)
-function getStackWeight(character) {
-  let weight = 1;
-  for (let i = 0; i < characters.length; i++) {
-    let other = characters[i];
-    if (other !== character && 
-        other.x < character.x + character.width && 
-        other.x + other.width > character.x && 
-        other.y + other.height <= character.y) {
-      weight += getStackWeight(other);
+// Function to find all blocks stacked on a given block
+function getStack(character) {
+  let stack = [character];
+  let checkAbove = true;
+
+  while (checkAbove) {
+    checkAbove = false;
+    for (let i = 0; i < characters.length; i++) {
+      let other = characters[i];
+      if (
+        other !== character &&
+        other.x < character.x + character.width &&
+        other.x + other.width > character.x &&
+        other.y + other.height === character.y
+      ) {
+        stack.push(other);
+        character = other;
+        checkAbove = true;
+      }
     }
   }
-  return weight;
+  return stack;
 }
 
 function update() {
   characters.forEach((character, index) => {
     let grounded = false;
 
-    // Gravity applies if there's no block below
+    // Apply gravity if not on top of another block
     if (!checkCollision(character, 0, character.velocityY + 1)) {
       character.velocityY += gravity;
     } else {
@@ -94,12 +103,12 @@ function update() {
 
     character.isOnGround = grounded;
 
-    // Handle horizontal movement & jumping for selected block
+    // Handle movement & pushing for selected block
     if (index === selectedIndex) {
       let moveX = 0;
       if (keys["ArrowLeft"]) moveX = -2;
       if (keys["ArrowRight"]) moveX = 2;
-      
+
       if (keys["ArrowUp"] && character.isOnGround) {
         character.velocityY = -10; // Jumping works again!
       }
@@ -109,12 +118,15 @@ function update() {
         if (!collision) {
           character.velocityX = moveX;
         } else {
-          // Pushing logic
-          let totalWeight = getStackWeight(collision);
+          // Push entire stack
+          let stack = getStack(collision);
+          let totalWeight = stack.length;
           let pushForce = 3 / totalWeight; // More weight = harder to push
-          
+
           if (Math.abs(moveX) > pushForce) {
-            collision.velocityX = pushForce * Math.sign(moveX);
+            stack.forEach(block => {
+              block.velocityX = pushForce * Math.sign(moveX);
+            });
             character.velocityX = pushForce * Math.sign(moveX);
           } else {
             character.velocityX = 0;
@@ -159,4 +171,5 @@ function gameLoop() {
 }
 
 gameLoop();
+
 
